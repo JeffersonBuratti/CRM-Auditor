@@ -34,7 +34,7 @@ Plano completo para construção de uma plataforma white-label de gestão de aud
 | `ENFERMEIRO_AUDITOR` | Realiza triagem técnico-administrativa: confere documentação, códigos TUSS, elegibilidade, duplicidades, compatibilidade CID/procedimento                                                    |
 | `MEDICO_AUDITOR`     | Realiza análise clínica: necessidade médica, pertinência, proporcionalidade. Emite parecer                                                                                                   |
 | `OPERADORA`          | Cliente do Owner. Envia guias, recebe pareceres finais, corrige pendências quando solicitado                                                                                                    |
-| `PRESTADOR`          | Hospital/clínica/laboratório onde o procedimento ocorre. Fase 1: apenas cadastro. Futuro: login próprio para consultar guias emitidas para ele, acompanhar status, responder solicitações de documentação complementar |      |
+| `PRESTADOR`          | Hospital/clínica/laboratório onde o procedimento ocorre. Login próprio para consultar guias emitidas para ele, acompanhar status, responder solicitações de documentação complementar |
 | `BENEFICIARIO`       | Paciente envolvido. Acesso restrito ao que lhe diz respeito + notificações                                                                                                                     |
 
 ---
