@@ -392,7 +392,7 @@ Rede Docker compartilhada: `auditoria-network` (external, criada via script ou n
 4. Auth (JWT + refresh token + middleware de roles)
 5. CRUD Usuários (OWNER + ENFERMEIRO_AUDITOR + MEDICO_AUDITOR)
 6. CRUD Operadoras (com upload de documentos)
-7. CRUD Prestadores (cadastro básico: razão social, CNPJ, CNES, tipo)
+7. CRUD Prestadores (cadastro + login próprio + consulta de guias emitidas para ele + acompanhamento de status)
 8. CRUD Beneficiários (simples e dinâmico)
 9. Layout principal + tema claro/escuro + white-label base
 10. Tela de login
@@ -425,6 +425,5 @@ Rede Docker compartilhada: `auditoria-network` (external, criada via script ou n
 25. WhatsApp adapter
 26. TISS XML import (se demandado)
 27. Assinatura digital de pareceres
-28. Portal do Prestador (login próprio, consulta de guias, envio de documentação complementar)
 
 ---
