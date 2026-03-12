@@ -7,33 +7,35 @@ Plano completo para construção de uma plataforma white-label de gestão de aud
 ## 1. Decisões Técnicas Consolidadas
 
 
-| Aspecto            | Decisão                                                                                       |
-| ------------------ | ---------------------------------------------------------------------------------------------- |
-| **Frontend**       | React 18 + Vite + React Router + TailwindCSS + Capacitor-ready                                 |
-| **Backend**        | Node.js + Express + Prisma ORM + Redis (Bull/BullMQ para filas)                                |
-| **Banco**          | PostgreSQL 16                                                                                  |
-| **Cache/Locks**    | Redis 7 (condition racing prevention via distributed locks)                                    |
-| **Auth**           | JWT (access + refresh token)                                                                   |
-| **Storage**        | Volume Docker local (uploads, contratos, laudos)                                               |
-| **Email**          | Adapter pattern genérico (SMTP/SES/SendGrid plug-and-play)                                    |
-| **Guias**          | Híbrido: upload PDF/JPG + formulário de metadados estruturados. TISS XML como feature futura |
-| **Idioma código** | pt-BR (variáveis, tabelas, comentários)                                                      |
-| **Repos**          | Separados — cada pasta com seu`package.json`                                                  |
-| **Docker**         | docker-compose separado por serviço (front, back, db, redis)                                  |
-| **White-label**    | Tema customizável (logos, cores, imagens) via configuração por ambiente                     |
+| Aspecto            | Decisão                                                                                                  |
+| ------------------ | --------------------------------------------------------------------------------------------------------- |
+| **Frontend**       | React 18 + Vite + React Router + TailwindCSS + Capacitor-ready                                            |
+| **Backend**        | Node.js + Express + Prisma ORM + Redis (Bull/BullMQ para filas)                                           |
+| **Banco**          | PostgreSQL 16                                                                                             |
+| **Cache/Locks**    | Redis 7 (condition racing prevention via distributed locks)                                               |
+| **Auth**           | JWT (access + refresh token)                                                                              |
+| **Storage**        | Volume Docker local (uploads, contratos, laudos)                                                          |
+| **Email**          | Adapter pattern genérico (SMTP/SES/SendGrid plug-and-play)                                               |
+| **Guias**          | Híbrido: upload PDF/JPG + formulário de metadados estruturados. TISS XML como feature futura ou não kk |
+| **Idioma código** | pt-BR (variáveis, tabelas, comentários)                                                                 |
+| **Repos**          | Separados — cada pasta com seu`package.json`                                                             |
+| **Docker**         | docker-compose separado por serviço (front, back, db, redis)                                             |
+| **White-label**    | Tema customizável (logos, cores, imagens) via configuração por ambiente                                |
 
 ---
 
 ## 2. Perfis de Acesso (Roles)
 
 
-| Role             | Descrição                                                                      |
-| ---------------- | -------------------------------------------------------------------------------- |
-| `SUPER_ADMIN`    | Dev/suporte técnico da plataforma. Acesso total, manutenção, config global    |
-| `OWNER`          | Dono da empresa de auditoria. Gerencia operadoras, médicos, fluxos, relatórios |
-| `MEDICO_AUDITOR` | Emite pareceres médicos sobre guias/procedimentos recebidos                     |
-| `OPERADORA`      | Cliente do Owner. Envia guias, recebe pareceres finais                           |
-| `BENEFICIARIO`   | Paciente envolvido. Acesso restrito ao que lhe diz respeito + notificações     |
+| Role                 | Descrição                                                                                                                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SUPER_ADMIN`        | Dev/suporte técnico da plataforma. Acesso total, manutenção, config global                                                                                                                    |
+| `OWNER`              | Dono da empresa de auditoria. Gerencia operadoras, auditores, fluxos, relatórios. Orquestra o fluxo: recebe guias da operadora, libera para triagem e dá a palavra final após parecer médico |
+| `ENFERMEIRO_AUDITOR` | Realiza triagem técnico-administrativa: confere documentação, códigos TUSS, elegibilidade, duplicidades, compatibilidade CID/procedimento                                                    |
+| `MEDICO_AUDITOR`     | Realiza análise clínica: necessidade médica, pertinência, proporcionalidade. Emite parecer                                                                                                   |
+| `OPERADORA`          | Cliente do Owner. Envia guias, recebe pareceres finais, corrige pendências quando solicitado                                                                                                    |
+| `PRESTADOR`          | Hospital/clínica/laboratório onde o procedimento ocorre. Fase 1: apenas cadastro. Futuro: acesso para responder solicitações de documentação complementar, consultar status de guias       |
+| `BENEFICIARIO`       | Paciente envolvido. Acesso restrito ao que lhe diz respeito + notificações                                                                                                                     |
 
 ---
 
@@ -96,10 +98,20 @@ frontend/
     │   │   ├── FormGuia.tsx
     │   │   ├── DetalhesGuia.tsx
     │   │   └── LinhaDoTempo.tsx
+    │   ├── Triagem/
+    │   │   ├── index.tsx
+    │   │   ├── ListaTriagens.tsx
+    │   │   ├── FormTriagem.tsx
+    │   │   └── DetalhesTriagem.tsx
     │   ├── Pareceres/
     │   │   ├── index.tsx
     │   │   ├── FormParecer.tsx
     │   │   └── ListaPareceres.tsx
+    │   ├── Prestadores/
+    │   │   ├── index.tsx
+    │   │   ├── ListaPrestadores.tsx
+    │   │   ├── FormPrestador.tsx
+    │   │   └── DetalhesPrestador.tsx
     │   ├── Beneficiarios/
     │   │   ├── index.tsx
     │   │   ├── ListaBeneficiarios.tsx
@@ -134,13 +146,17 @@ frontend/
     │   ├── api.ts            # axios/fetch wrapper
     │   ├── authServico.ts
     │   ├── guiaServico.ts
+    │   ├── triagemServico.ts
     │   ├── operadoraServico.ts
+    │   ├── prestadorServico.ts
     │   └── notificacaoServico.ts
     ├── tipos/
     │   ├── usuario.ts
     │   ├── guia.ts
+    │   ├── triagem.ts
     │   ├── parecer.ts
     │   ├── operadora.ts
+    │   ├── prestador.ts
     │   └── beneficiario.ts
     ├── utils/
     │   ├── formatadores.ts
@@ -201,11 +217,21 @@ backend/
     │   │   ├── guiaServico.ts
     │   │   ├── guiaValidacao.ts
     │   │   └── guiaTipos.ts
+    │   ├── triagem/
+    │   │   ├── index.ts
+    │   │   ├── triagemControlador.ts
+    │   │   ├── triagemServico.ts
+    │   │   └── triagemValidacao.ts
     │   ├── pareceres/
     │   │   ├── index.ts
     │   │   ├── parecerControlador.ts
     │   │   ├── parecerServico.ts
     │   │   └── parecerValidacao.ts
+    │   ├── prestadores/
+    │   │   ├── index.ts
+    │   │   ├── prestadorControlador.ts
+    │   │   ├── prestadorServico.ts
+    │   │   └── prestadorValidacao.ts
     │   ├── notificacoes/
     │   │   ├── index.ts
     │   │   ├── notificacaoControlador.ts
@@ -243,6 +269,15 @@ backend/
     └── tipos/
         ├── express.d.ts
         └── global.ts
+├── prisma/
+│   ├── schema.prisma
+│   └── migrations/
+│       └── ... (migrations SQL manuais)
+├── seeds/
+│   ├── index.ts              # orquestrador de seeds
+│   ├── usuarios.ts
+│   ├── operadoras.ts
+│   └── slaConfigs.ts
 ```
 
 ### 3.3 Database (`/database`)
@@ -251,15 +286,9 @@ backend/
 database/
 ├── docker-compose.yml        # PostgreSQL
 ├── docker-compose.redis.yml  # Redis
-├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
-│       └── ... (geradas pelo prisma migrate)
-├── seeds/
-│   ├── index.ts              # orquestrador de seeds
-│   ├── usuarios.ts
-│   ├── operadoras.ts
-│   └── slaConfigs.ts
+├── volumes/                  # persistência local (gitignored)
+│   ├── postgres/
+│   └── redis/
 └── scripts/
     ├── backup.sh
     └── restore.sh
@@ -271,13 +300,15 @@ database/
 
 ### Entidades principais
 
-- **Usuario** — id, nome, email, senha_hash, cpf, telefone, role (enum), ativo, criadoEm, atualizadoEm
+- **Usuario** — id, nome, email, senhaHash, cpf, telefone, role (enum), ativo, criadoEm, atualizadoEm
 - **Operadora** — id, razaoSocial, cnpj, contato, ativo, criadoEm
 - **OperadoraDocumento** — id, operadoraId, tipo, caminhoArquivo, criadoEm
+- **Prestador** — id, razaoSocial, cnpj, cnes, tipo (HOSPITAL, CLINICA, LABORATORIO, CONSULTORIO), endereco, contato, ativo, criadoEm
 - **Beneficiario** — id, nome, cpf, carteirinha, operadoraId, dataNascimento, contato
-- **Guia** — id, operadoraId, beneficiarioId, tipo (enum), status (enum), prioridade, codigoProcedimento, descricao, valorSolicitado, criadoEm, prazoSLA, atualizadoEm
+- **Guia** — id, operadoraId, beneficiarioId, prestadorId, tipo (enum), status (enum), prioridade, codigoProcedimento, descricao, valorSolicitado, enfermeiroId, medicoId, criadoEm, prazoSLA, atualizadoEm
 - **GuiaAnexo** — id, guiaId, tipo, caminhoArquivo, criadoEm
 - **GuiaMetadados** — id, guiaId, codigoTUSS, cid, tipoInternacao, etc.
+- **Triagem** — id, guiaId, enfermeiroId, resultado (APROVADA, REPROVADA, PENDENCIA), observacoes, criadoEm
 - **Parecer** — id, guiaId, medicoId, resultado (enum), justificativa, criadoEm
 - **HistoricoEvento** — id, entidade, entidadeId, acao, usuarioId, detalhes (JSON), criadoEm
 - **Notificacao** — id, usuarioId, tipo, canal, conteudo, enviadoEm, lidoEm
@@ -288,10 +319,16 @@ database/
 ### Enums principais
 
 ```
-Role: SUPER_ADMIN | OWNER | MEDICO_AUDITOR | OPERADORA | BENEFICIARIO
-StatusGuia: RASCUNHO | ENVIADA | EM_ANALISE | AGUARDANDO_PARECER | PARECER_EMITIDO | DEVOLVIDA | FINALIZADA
+Role: SUPER_ADMIN | OWNER | ENFERMEIRO_AUDITOR | MEDICO_AUDITOR | OPERADORA | PRESTADOR | BENEFICIARIO
+
+StatusGuia: RASCUNHO | ENVIADA | EM_ANALISE | TRIAGEM_TECNICA | PENDENCIA_TECNICA
+           | AGUARDANDO_PARECER | PARECER_EMITIDO | FINALIZADA | REABERTA | REENVIADA
+
+ResultadoTriagem: APROVADA | REPROVADA | PENDENCIA
 ResultadoParecer: AUTORIZADO | NEGADO | AUTORIZADO_PARCIAL | SOLICITAR_INFO
+
 TipoGuia: CONSULTA | EXAME | INTERNACAO | PROCEDIMENTO | TERAPIA
+TipoPrestador: HOSPITAL | CLINICA | LABORATORIO | CONSULTORIO
 CanalNotificacao: EMAIL | WHATSAPP | SISTEMA
 ```
 
@@ -301,12 +338,27 @@ CanalNotificacao: EMAIL | WHATSAPP | SISTEMA
 
 ```
 OPERADORA envia guia (status: ENVIADA)
-    → OWNER recebe, analisa (status: EM_ANALISE)
-        → OWNER encaminha para MEDICO_AUDITOR (status: AGUARDANDO_PARECER)
-            → MEDICO emite parecer (status: PARECER_EMITIDO)
-                → OWNER avalia parecer, classifica (status: DEVOLVIDA)
-                    → OPERADORA recebe resultado (status: FINALIZADA)
+  → OWNER recebe, avalia e encaminha para triagem (status: EM_ANALISE)
+    → ENFERMEIRO_AUDITOR recebe (status: TRIAGEM_TECNICA)
+      → Aprova → segue para MEDICO_AUDITOR (status: AGUARDANDO_PARECER)
+      → Reprova/pendência → devolve para OPERADORA (status: PENDENCIA_TECNICA)
+        → OPERADORA corrige e reenvia (status: REENVIADA → volta pra EM_ANALISE)
+    → MEDICO_AUDITOR emite parecer (status: PARECER_EMITIDO)
+      → OWNER avalia resultado final, classifica (status: FINALIZADA)
+      → OWNER discorda → reabrir ou solicitar novo parecer (status: REABERTA)
 ```
+
+### Participação de cada role no fluxo
+
+
+| Role                   | Momento de atuação                                                                         |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| **OPERADORA**          | Envia guia, corrige pendências técnicas quando devolvida                                   |
+| **OWNER**              | Início: recebe e libera pra triagem. Final: avalia parecer e classifica. Exceções: reabre |
+| **ENFERMEIRO_AUDITOR** | Triagem técnico-administrativa (documentação, códigos, elegibilidade)                    |
+| **MEDICO_AUDITOR**     | Análise clínica e emissão de parecer                                                      |
+
+O meio do fluxo (enfermeiro → médico) flui diretamente, sem passar pelo Owner.
 
 Cada transição gera:
 
@@ -338,38 +390,41 @@ Rede Docker compartilhada: `auditoria-network` (external, criada via script ou n
 2. Docker-compose de todos os serviços
 3. Schema Prisma + migration inicial
 4. Auth (JWT + refresh token + middleware de roles)
-5. CRUD Usuários (OWNER + MEDICO_AUDITOR)
+5. CRUD Usuários (OWNER + ENFERMEIRO_AUDITOR + MEDICO_AUDITOR)
 6. CRUD Operadoras (com upload de documentos)
-7. CRUD Beneficiários (simples e dinâmico)
-8. Layout principal + tema claro/escuro + white-label base
-9. Tela de login
+7. CRUD Prestadores (cadastro básico: razão social, CNPJ, CNES, tipo)
+8. CRUD Beneficiários (simples e dinâmico)
+9. Layout principal + tema claro/escuro + white-label base
+10. Tela de login
 
 ### Fase 2 — Fluxo Core
 
-10. CRUD Guias (formulário + upload de anexos + metadados)
-11. Máquina de estados da guia (transições + validações)
-12. Pareceres médicos
-13. Histórico/Linha do tempo automática
-14. SLA engine (prazos por categoria, alertas)
-15. Dashboard com indicadores
+11. CRUD Guias (formulário + upload de anexos + metadados)
+12. Máquina de estados da guia (transições + validações conforme fluxo definido)
+13. Triagem técnica (tela do enfermeiro auditor)
+14. Pareceres médicos (tela do médico auditor)
+15. Histórico/Linha do tempo automática
+16. SLA engine (prazos por categoria, alertas)
+17. Dashboard com indicadores
 
 ### Fase 3 — Comunicação + Relatórios
 
-16. Sistema de notificações (adapter email)
-17. Config de notificações por Owner
-18. Relatórios (SLA, beneficiário, auditor)
-19. Exports (PDF de pareceres, relatórios)
+18. Sistema de notificações (adapter email)
+19. Config de notificações por Owner
+20. Relatórios (SLA, beneficiário, auditor por enfermeiro e médico)
+21. Exports (PDF de pareceres, triagens, relatórios)
 
 ### Fase 4 — Mobile + Acessibilidade
 
-20. Capacitor setup (Android + iOS)
-21. Acessibilidade (aria-labels, narrador, contraste)
-22. Libras (integração com VLibras ou similar)
+22. Capacitor setup (Android + iOS)
+23. Acessibilidade (aria-labels, narrador, contraste)
+24. Libras (integração com VLibras ou similar)
 
 ### Fase 5 — Expansão
 
-23. WhatsApp adapter
-24. TISS XML import (se demandado)
-25. Assinatura digital de pareceres
+25. WhatsApp adapter
+26. TISS XML import (se demandado)
+27. Assinatura digital de pareceres
+28. Portal do Prestador (login próprio, consulta de guias, envio de documentação complementar)
 
 ---
