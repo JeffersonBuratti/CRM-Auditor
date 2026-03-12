@@ -373,12 +373,3 @@ Rede Docker compartilhada: `auditoria-network` (external, criada via script ou n
 25. Assinatura digital de pareceres
 
 ---
-
-## 9. Ordem de Implementação (primeiros entregáveis)
-
-1. **Criar regras globais** (`.windsurf/rules/regras-globais.md`)
-2. **Scaffolding completo** das 3 pastas com configs (package.json, tsconfig, docker-compose, vite, tailwind, prisma)
-3. **Schema Prisma** + migration SQL inicial
-4. **Backend base** (Express + middlewares + auth)
-5. **Frontend base** (layout, rotas, auth, tema)
-6. Iterar por módulos (CRUD → Fluxo → Relatórios → Mobile)
