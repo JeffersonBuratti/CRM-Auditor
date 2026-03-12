@@ -6,32 +6,34 @@ Plano completo para construção de uma plataforma white-label de gestão de aud
 
 ## 1. Decisões Técnicas Consolidadas
 
-| Aspecto | Decisão |
-|---|---|
-| **Frontend** | React 18 + Vite + React Router + TailwindCSS + Capacitor-ready |
-| **Backend** | Node.js + Express + Prisma ORM + Redis (Bull/BullMQ para filas) |
-| **Banco** | PostgreSQL 16 |
-| **Cache/Locks** | Redis 7 (condition racing prevention via distributed locks) |
-| **Auth** | JWT (access + refresh token) |
-| **Storage** | Volume Docker local (uploads, contratos, laudos) |
-| **Email** | Adapter pattern genérico (SMTP/SES/SendGrid plug-and-play) |
-| **Guias** | Híbrido: upload PDF/JPG + formulário de metadados estruturados. TISS XML como feature futura |
-| **Idioma código** | pt-BR (variáveis, tabelas, comentários) |
-| **Repos** | Separados — cada pasta com seu `package.json` |
-| **Docker** | docker-compose separado por serviço (front, back, db, redis) |
-| **White-label** | Tema customizável (logos, cores, imagens) via configuração por ambiente |
+
+| Aspecto            | Decisão                                                                                       |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| **Frontend**       | React 18 + Vite + React Router + TailwindCSS + Capacitor-ready                                 |
+| **Backend**        | Node.js + Express + Prisma ORM + Redis (Bull/BullMQ para filas)                                |
+| **Banco**          | PostgreSQL 16                                                                                  |
+| **Cache/Locks**    | Redis 7 (condition racing prevention via distributed locks)                                    |
+| **Auth**           | JWT (access + refresh token)                                                                   |
+| **Storage**        | Volume Docker local (uploads, contratos, laudos)                                               |
+| **Email**          | Adapter pattern genérico (SMTP/SES/SendGrid plug-and-play)                                    |
+| **Guias**          | Híbrido: upload PDF/JPG + formulário de metadados estruturados. TISS XML como feature futura |
+| **Idioma código** | pt-BR (variáveis, tabelas, comentários)                                                      |
+| **Repos**          | Separados — cada pasta com seu`package.json`                                                  |
+| **Docker**         | docker-compose separado por serviço (front, back, db, redis)                                  |
+| **White-label**    | Tema customizável (logos, cores, imagens) via configuração por ambiente                     |
 
 ---
 
 ## 2. Perfis de Acesso (Roles)
 
-| Role | Descrição |
-|---|---|
-| `SUPER_ADMIN` | Dev/suporte técnico da plataforma. Acesso total, manutenção, config global |
-| `OWNER` | Dono da empresa de auditoria. Gerencia operadoras, médicos, fluxos, relatórios |
-| `MEDICO_AUDITOR` | Emite pareceres médicos sobre guias/procedimentos recebidos |
-| `OPERADORA` | Cliente do Owner. Envia guias, recebe pareceres finais |
-| `BENEFICIARIO` | Paciente envolvido. Acesso restrito ao que lhe diz respeito + notificações |
+
+| Role             | Descrição                                                                      |
+| ---------------- | -------------------------------------------------------------------------------- |
+| `SUPER_ADMIN`    | Dev/suporte técnico da plataforma. Acesso total, manutenção, config global    |
+| `OWNER`          | Dono da empresa de auditoria. Gerencia operadoras, médicos, fluxos, relatórios |
+| `MEDICO_AUDITOR` | Emite pareceres médicos sobre guias/procedimentos recebidos                     |
+| `OPERADORA`      | Cliente do Owner. Envia guias, recebe pareceres finais                           |
+| `BENEFICIARIO`   | Paciente envolvido. Acesso restrito ao que lhe diz respeito + notificações     |
 
 ---
 
@@ -307,6 +309,7 @@ OPERADORA envia guia (status: ENVIADA)
 ```
 
 Cada transição gera:
+
 - Registro em `HistoricoEvento` (quem, quando, o que, detalhes)
 - Verificação de SLA (prazo conforme categoria/RN)
 - Notificação aos envolvidos (conforme `ConfigNotificacao` do Owner)
@@ -315,12 +318,13 @@ Cada transição gera:
 
 ## 6. Docker — Composição
 
-| Serviço | Arquivo | Porta | Volume |
-|---|---|---|---|
-| PostgreSQL | `database/docker-compose.yml` | 5432 | `./volumes/postgres` |
-| Redis | `database/docker-compose.redis.yml` | 6379 | `./volumes/redis` |
-| Backend | `backend/docker-compose.yml` | 3001 | `./volumes/uploads` |
-| Frontend | `frontend/docker-compose.yml` | 3000 | — |
+
+| Serviço   | Arquivo                             | Porta | Volume               |
+| ---------- | ----------------------------------- | ----- | -------------------- |
+| PostgreSQL | `database/docker-compose.yml`       | 5432  | `./volumes/postgres` |
+| Redis      | `database/docker-compose.redis.yml` | 6379  | `./volumes/redis`    |
+| Backend    | `backend/docker-compose.yml`        | 3001  | `./volumes/uploads`  |
+| Frontend   | `frontend/docker-compose.yml`       | 3000  | —                   |
 
 Rede Docker compartilhada: `auditoria-network` (external, criada via script ou no primeiro compose).
 
@@ -329,6 +333,7 @@ Rede Docker compartilhada: `auditoria-network` (external, criada via script ou n
 ## 7. Funcionalidades por Fase
 
 ### Fase 1 — Fundação (scaffolding + auth + CRUD base)
+
 1. Estrutura de diretórios completa (front, back, db)
 2. Docker-compose de todos os serviços
 3. Schema Prisma + migration inicial
@@ -340,6 +345,7 @@ Rede Docker compartilhada: `auditoria-network` (external, criada via script ou n
 9. Tela de login
 
 ### Fase 2 — Fluxo Core
+
 10. CRUD Guias (formulário + upload de anexos + metadados)
 11. Máquina de estados da guia (transições + validações)
 12. Pareceres médicos
@@ -348,38 +354,23 @@ Rede Docker compartilhada: `auditoria-network` (external, criada via script ou n
 15. Dashboard com indicadores
 
 ### Fase 3 — Comunicação + Relatórios
+
 16. Sistema de notificações (adapter email)
 17. Config de notificações por Owner
 18. Relatórios (SLA, beneficiário, auditor)
 19. Exports (PDF de pareceres, relatórios)
 
 ### Fase 4 — Mobile + Acessibilidade
+
 20. Capacitor setup (Android + iOS)
 21. Acessibilidade (aria-labels, narrador, contraste)
 22. Libras (integração com VLibras ou similar)
 
 ### Fase 5 — Expansão
+
 23. WhatsApp adapter
 24. TISS XML import (se demandado)
 25. Assinatura digital de pareceres
-
----
-
-## 8. Regras Globais de Código (arquivo `.windsurf/rules/regras-globais.md`)
-
-Será criado com as seguintes diretrizes:
-- Código **modular**: arquivos orquestradores (index) importando módulos menores
-- Cada página/serviço em **diretório dedicado**
-- Nomes em **pt-BR**
-- Comentários em **pt-BR**
-- Sem arquivo > 200 linhas (quebrar em submódulos)
-- Toda operação com side-effect usa **Redis lock**
-- Todo evento gera **registro de histórico**
-- Frontend **mobile-first**, responsivo 720p–1080p
-- **Tema claro/escuro** nativo
-- Validação com **Zod** (back) e validação no front
-- Respostas da API sempre no formato padronizado `{ sucesso, dados, erro, meta }`
-- Migrations manuais em SQL na pasta de migrations do Prisma
 
 ---
 
