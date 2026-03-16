@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: auditoria-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-auditoria}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-auditoria123}
+      POSTGRES_DB: ${POSTGRES_DB:-auditoria_medica}
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql/data
+    networks:
+      - auditoria-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-auditoria}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  auditoria-network:
+    external: true
